@@ -16,44 +16,6 @@ from Doraemon.Wrapper import *
 from six import with_metaclass
 
 
-class Dictate(object):
-    """dict可以obj方式访问"""
-
-    def __init__(self, d):
-        # since __setattr__ is overridden, self.__dict = d doesn't work
-        object.__setattr__(self, '_Dictate__dict', d)
-
-    # Dictionary-like access / updates
-    def __getitem__(self, name):
-        value = self.__dict[name]
-        if isinstance(value, dict):  # recursively view sub-dicts as objects
-            value = Dictate(value)
-        return value
-
-    def __setitem__(self, name, value):
-        self.__dict[name] = value
-
-    def __delitem__(self, name):
-        del self.__dict[name]
-
-    # Object-like access / updates
-    def __getattr__(self, name):
-        return self[name]
-
-    def __setattr__(self, name, value):
-        self[name] = value
-
-    def __delattr__(self, name):
-        del self[name]
-
-    def __repr__(self):
-        return "%s(%r)" % (type(self).__name__, self.__dict)
-
-    def __str__(self):
-        return str(self.__dict)
-
-
-
 # 编写ModelMetaclass元类
 class ModelMetaclass(type):
     """
@@ -80,10 +42,10 @@ class ModelMetaclass(type):
         attr_meta = attrs.pop('Meta', None)
 
         if getattr(attr_meta, 'table_name', None) is None:
-            attrs['__tablename__'] = name.lower()
+            attrs['table_name'] = name.lower()
 
         else:
-            attrs['__tablename__'] = getattr(attr_meta, 'table_name')
+            attrs['table_name'] = getattr(attr_meta, 'table_name')
 
         mappings = {}  # 保存field
         for attr_name, attr_value in attrs.items():
@@ -95,9 +57,6 @@ class ModelMetaclass(type):
         for k in mappings.keys():
             attrs.pop(k)  # 去除field属性
 
-        # 把所有的Field移到__mappings__里，防止实例的属性覆盖类的同名属性
-        attrs['__mappings__'] = mappings
-
         return type.__new__(mcs, name, bases, attrs)
 
 
@@ -105,31 +64,18 @@ class ModelMetaclass(type):
 class Model(with_metaclass(ModelMetaclass)):
     def __init__(self, **kwargs):
         self.dict = {}
-        self.dict = Dictate(kwargs)
-
+        self.dict = kwargs
 
         self.wrapper = Connect()
 
-        view1 = InsertObserver()
-        view2 = UpdateObserver()
-        self.wrapper.attach(view1)
-        self.wrapper.attach(view2)
-
-
+        o_insert = InsertObserver()
+        o_update = UpdateObserver()
+        self.wrapper.attach(o_insert)
+        self.wrapper.attach(o_update)
 
     def save(self):
-        fields = []
-        params = []
-        args = []
-
-        for field_name, field in self.__mappings__.items():
-            fields.append(field_name)
-            args.append(getattr(self.dict, field_name, None))
-
-        print(fields)
-        print(args)
-        print(self.__tablename__)
-
-        self.wrapper.data = {"key": "val"}
+        self.wrapper.table = self.table_name
+        self.wrapper.data = self.dict
         self.wrapper.status = "insert"
 
+        return  self.wrapper.insertid

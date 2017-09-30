@@ -80,6 +80,24 @@ class Connect(Subject):
         self._data = None
 
     @property
+    def table(self):
+        return self._table
+
+    @table.setter
+    def table(self, value):
+        self._table = value
+
+
+    @property
+    def insertid(self):
+        return self._insertid
+
+    @insertid.setter
+    def insertid(self, value):
+        self._insertid = value
+
+
+    @property
     def data(self):
         return self._data
 
@@ -101,36 +119,37 @@ class Connect(Subject):
         self.notify()
 
 
+
 class InsertObserver(object):
     def update(self, subject):
-        # print(subject.conn)
-        # print(subject.data)
-        # print(subject.status)
-        # print(subject.name)
-
         if subject.status == 'insert':
-            subject.database['tabeltest'].insert_one(subject.data)
+            results = subject.database[subject.table].insert_one(subject.data)
+
+            # return insertid
+            subject.insertid = results.inserted_id
+
 
 
 class UpdateObserver(object):
     def update(self, subject):
-        print(subject.conn)
-        print(subject.data)
-        print(subject.status)
-        print(subject.name)
+        if subject.status == 'update':
+            # TODO UPDATE
+            print(subject.conn)
+            print(subject.data)
+            print(subject.status)
+            print(subject.name)
 
+# def main():
+#     data1 = Connect()
+#
+#     view1 = InsertObserver()
+#     view2 = UpdateObserver()
+#     data1.attach(view1)
+#     data1.attach(view2)
+#
+#     data1.data = {"key": "val"}
+#     data1.status = "insert"
 
-def main():
-    data1 = Connect()
-
-    view1 = InsertObserver()
-    view2 = UpdateObserver()
-    data1.attach(view1)
-    data1.attach(view2)
-
-    data1.data = {"key": "val"}
-    data1.status = "insert"
-
-    #
-    # if __name__ == '__main__':
-    #     main()
+#
+# if __name__ == '__main__':
+#     main()
