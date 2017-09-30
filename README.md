@@ -1,7 +1,7 @@
 # Doraemon
 
 
-
+```
 from Doraemon.Field import *
 from Doraemon.Model import Model
 
@@ -16,5 +16,6 @@ class User(Model):
 
 u = User(id=1, name='laowang')
 print(u.save())
+```
 
 
