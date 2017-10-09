@@ -28,8 +28,8 @@ class Field(object):
 
     fieldname = property(_get_fieldname, _set_fieldname)
 
-    def get_raw(self, obj):
-        return self.__get__(obj)
+    # def get_raw(self, obj):
+    #     return self.__get__(obj)
 
     def __get__(self, obj, type=None):
         v = getattr(obj, self.get_obj_key(),
@@ -40,8 +40,6 @@ class Field(object):
         if value is not None:
             setattr(obj, self.get_obj_key(), value)
 
-    def __del__(self):
-        pass
 
     def get_key(self):
         return self.fieldname
