@@ -51,11 +51,12 @@ class ModelMetaclass(type):
         for attr_name, attr_value in attrs.items():
 
             if isinstance(attr_value, Field):
-                # print('Found maping: %s ==> %s' % (attr_name, attr_value))
                 mappings[attr_name] = attr_value
 
         for k in mappings.keys():
             attrs.pop(k)  # 去除field属性
+
+        attrs['fields'] = mappings
 
         return type.__new__(mcs, name, bases, attrs)
 
@@ -64,7 +65,8 @@ class ModelMetaclass(type):
 class Model(with_metaclass(ModelMetaclass)):
     def __init__(self, **kwargs):
         self.dict = {}
-        self.dict = kwargs
+        self.kwargs = kwargs
+        self.default_value = None
 
         self.wrapper = Connect()
 
@@ -74,8 +76,31 @@ class Model(with_metaclass(ModelMetaclass)):
         self.wrapper.attach(o_update)
 
     def save(self):
+
+
+        """
+        u = Server()
+        u.code=1
+        u.public_ip='laowang'
+        print(u.save())
+
+        u = Server(code=12,public_ip='laowang2')
+
+        print(u.save())
+
+        实现对象赋值和初始化赋值
+        :return:
+        """
+        for k, v in self.fields.items():
+
+            if self.kwargs == {}:
+                self.dict[k] = (getattr(self, k, None))
+            else:
+
+                self.dict[k] = self.kwargs.get(k, None)
+
         self.wrapper.table = self.table_name
         self.wrapper.data = self.dict
         self.wrapper.status = "insert"
 
-        return  self.wrapper.insertid
+        return self.wrapper.insertid
